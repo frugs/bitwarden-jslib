@@ -16,12 +16,13 @@ import { ElectronConstants } from './electronConstants';
 import { WindowMain } from './window.main';
 
 export class TrayMain {
-    contextMenu: Menu;
+    contextMenuTemplate: MenuItemConstructorOptions[];
 
     private appName: string;
     private tray: Tray;
     private icon: string | Electron.NativeImage;
     private pressedIcon: Electron.NativeImage;
+    private contextMenu: Menu;
 
     constructor(private windowMain: WindowMain, private i18nService: I18nService,
         private storageService: StorageService) {
@@ -54,6 +55,7 @@ export class TrayMain {
             menuItemOptions.splice(1, 0, ...additionalMenuItems);
         }
 
+        this.contextMenuTemplate = menuItemOptions;
         this.contextMenu = Menu.buildFromTemplate(menuItemOptions);
         if (await this.storageService.get<boolean>(ElectronConstants.enableTrayKey)) {
             this.showTray();
@@ -133,7 +135,8 @@ export class TrayMain {
     }
 
     updateContextMenu() {
-        if (this.contextMenu != null && this.isLinux()) {
+        this.contextMenu = Menu.buildFromTemplate(this.contextMenuTemplate);
+        if (this.contextMenu != null && !this.isDarwin()) {
             this.tray.setContextMenu(this.contextMenu);
         }
     }
@@ -148,10 +151,6 @@ export class TrayMain {
 
     private isDarwin() {
         return process.platform === 'darwin';
-    }
-
-    private isLinux() {
-        return process.platform === 'linux';
     }
 
     private async toggleWindow() {
